@@ -46,7 +46,7 @@ python train_image_classifier.py \
   --checkpoint_path=${PRETRAINED_CHECKPOINT_DIR}/inception_v1.ckpt \
   --checkpoint_exclude_scopes=InceptionV1/Logits \
   --trainable_scopes=InceptionV1/Logits \
-  --max_number_of_steps=3000 \
+  --max_number_of_steps=3500 \
   --batch_size=32 \
   --learning_rate=0.01 \
   --save_interval_secs=60 \
@@ -72,7 +72,7 @@ python train_image_classifier.py \
   --dataset_dir=${DATASET_DIR} \
   --checkpoint_path=${TRAIN_DIR} \
   --model_name=inception_v1 \
-  --max_number_of_steps=1000 \
+  --max_number_of_steps=1500 \
   --batch_size=32 \
   --learning_rate=0.001 \
   --save_interval_secs=60 \
