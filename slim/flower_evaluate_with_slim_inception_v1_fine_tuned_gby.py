@@ -2,6 +2,7 @@ import os
 import tensorflow as tf
 from datasets import flowers, dataset_utils
 from nets import inception
+from nets import alexnet
 from preprocessing import inception_preprocessing
 import matplotlib.pyplot as plt
 import numpy as np
@@ -45,22 +46,23 @@ def load_batch(dataset, batch_size=32, height=299, width=299, is_training=False)
 
     return images, images_raw, labels
 
-flowers_data_dir = '/tmp/flowers'
+flowers_data_dir = '/home/gao/Data/flower/tf_data/slim/flower_fine_tune/flowers'
 # train_dir = '/tmp/inception_finetuned/'
-train_dir = '/home/gao/Data/flower/tf_data/slim/inception_v1_fine_tune/flowers-models/inception_v1'
 train_dir = '/home/gao/Data/flower/tf_data/slim/inception_v1_fine_tune/flowers-models/inception_v1/all'
+
 image_size = inception.inception_v1.default_image_size
-batch_size = 25
+batch_size = 5
 
 with tf.Graph().as_default():
     tf.logging.set_verbosity(tf.logging.INFO)
 
-    dataset = flowers.get_split('train', flowers_data_dir)
+    # dataset = flowers.get_split('train', flowers_data_dir)
+    dataset = flowers.get_split('validation', flowers_data_dir)
     images, images_raw, labels = load_batch(dataset, height=image_size, width=image_size)
 
     # Create the model, use the default arg scope to configure the batch norm parameters.
     with slim.arg_scope(inception.inception_v1_arg_scope()):
-        logits, _ = inception.inception_v1(images, num_classes=dataset.num_classes, is_training=True)
+        logits, _ = inception.inception_v1(images, num_classes=dataset.num_classes, is_training=False)
 
     probabilities = tf.nn.softmax(logits)
 
@@ -71,7 +73,7 @@ with tf.Graph().as_default():
 
     with tf.Session() as sess:
         with slim.queues.QueueRunners(sess):
-            sess.run(tf.initialize_local_variables())
+#             sess.run(tf.initialize_local_variables())
             init_fn(sess)
             np_probabilities, np_images_raw, np_labels = sess.run([probabilities, images_raw, labels])
 
