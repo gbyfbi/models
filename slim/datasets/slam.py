@@ -72,7 +72,7 @@ def get_split(split_name, dataset_dir, file_pattern=None, reader=None):
       'image/encoded': tf.FixedLenFeature((), tf.string, default_value=''),
       'image/format': tf.FixedLenFeature((), tf.string, default_value='png'),
       'image/class/label': tf.FixedLenFeature(
-          (6,), tf.float32, default_value=tf.zeros([], dtype=tf.int64)),
+          (6,), tf.float32, default_value=tf.zeros([6], dtype=tf.float32)),
   }
 
   items_to_handlers = {
