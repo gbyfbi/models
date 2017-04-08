@@ -41,13 +41,13 @@ import csv
 _DATA_URL = 'http://download.tensorflow.org/example_images/slam_photos.tgz'
 
 # The number of images in the validation set.
-_NUM_VALIDATION = 1
+_NUM_VALIDATION = 100
 
 # Seed for repeatability.
 _RANDOM_SEED = 0
 
 # The number of shards per dataset split.
-_NUM_SHARDS = 1
+_NUM_SHARDS = 4
 
 
 class ImageReader(object):
@@ -55,20 +55,29 @@ class ImageReader(object):
 
   def __init__(self):
     # Initializes function that decodes RGB JPEG data.
-    self._decode_jpeg_data = tf.placeholder(dtype=tf.string)
-    self._decode_jpeg = tf.image.decode_jpeg(self._decode_jpeg_data, channels=3)
+    # self._decode_jpeg_data = tf.placeholder(dtype=tf.string)
+    # self._decode_jpeg = tf.image.decode_jpeg(self._decode_jpeg_data, channels=3)
+    self._decode_png_data = tf.placeholder(dtype=tf.string)
+    self._decode_png = tf.image.decode_png(self._decode_png_data, channels=3)
 
   def read_image_dims(self, sess, image_data):
-    image = self.decode_jpeg(sess, image_data)
+    # image = self.decode_jpeg(sess, image_data)
+    image = self.decode_png(sess, image_data)
     return image.shape[0], image.shape[1]
 
-  def decode_jpeg(self, sess, image_data):
-    image = sess.run(self._decode_jpeg,
-                     feed_dict={self._decode_jpeg_data: image_data})
+  # def decode_jpeg(self, sess, image_data):
+  #   image = sess.run(self._decode_jpeg,
+  #                    feed_dict={self._decode_jpeg_data: image_data})
+  #   assert len(image.shape) == 3
+  #   assert image.shape[2] == 3
+  #   return image
+
+  def decode_png(self, sess, image_data):
+    image = sess.run(self._decode_png,
+                     feed_dict={self._decode_png_data: image_data})
     assert len(image.shape) == 3
     assert image.shape[2] == 3
     return image
-
 
 def _get_file_paths_and_filename2id_dict(dataset_dir):
   """Returns a list of filenames and inferred class names.
@@ -82,7 +91,7 @@ def _get_file_paths_and_filename2id_dict(dataset_dir):
     subdirectories, representing class names.
   """
   slam_photo_dir= os.path.join(dataset_dir, 'slam_photos')
-  photo_paths = tf.gfile.Glob(slam_photo_dir+'/*.jpg')
+  photo_paths = tf.gfile.Glob(slam_photo_dir+'/*.png')
   # for filename in os.listdir(slam_photo_dir):
   #   path = os.path.join(slam_photo_dir, filename)
   #   photo_paths.append(path)
@@ -144,7 +153,7 @@ def _convert_dataset(split_name, file_paths, file_name_to_ids, dataset_dir, outp
             class_id = file_name_to_ids[file_name]
 
             example = dataset_utils.image_to_tfexample_regression(
-              image_data, 'jpg', height, width, class_id)
+              image_data, 'png', height, width, class_id)
             tfrecord_writer.write(example.SerializeToString())
 
   sys.stdout.write('\n')
