@@ -454,6 +454,26 @@ def main(_):
           capacity=5 * FLAGS.batch_size)
       # labels = slim.one_hot_encoding(
       #     labels, dataset.num_classes - FLAGS.labels_offset)
+
+      with tf.Session() as sess:
+          sess.run(tf.global_variables_initializer())
+          coord = tf.train.Coordinator()
+          threads = tf.train.start_queue_runners(sess=sess, coord=coord)
+          image_tensor = sess.run(images)
+          print(image_tensor.shape)
+          image = image_tensor[0, :, :, :]
+
+          import matplotlib.pyplot as plt
+          import numpy as np
+          plt.figure()
+          plt.imshow(image)
+          plt.axis('off')
+          plt.show()
+
+          # Finish off the filename queue coordinator.
+          coord.request_stop()
+          coord.join(threads)
+
       batch_queue = slim.prefetch_queue.prefetch_queue(
           [images, labels], capacity=2 * deploy_config.num_clones)
 
@@ -476,7 +496,9 @@ def main(_):
       # tf.losses.softmax_cross_entropy(
       #     logits=logits, onehot_labels=labels,
       #     label_smoothing=FLAGS.label_smoothing, weights=1.0)
-      tf.losses.mean_squared_error(labels=labels, predictions=logits)
+      from tensorflow.python.ops.losses import util
+      regression_loss = tf.reduce_sum(tf.squared_difference(labels, logits))
+      util.add_loss(regression_loss)
       return end_points
 
     # Gather initial summaries.
@@ -492,17 +514,17 @@ def main(_):
     end_points = clones[0].outputs
     for end_point in end_points:
       x = end_points[end_point]
-      summaries.add(tf.summary.histogram('activations/' + end_point, x))
-      summaries.add(tf.summary.scalar('sparsity/' + end_point,
-                                      tf.nn.zero_fraction(x)))
+      # summaries.add(tf.summary.histogram('activations/' + end_point, x))
+      # summaries.add(tf.summary.scalar('sparsity/' + end_point,
+      #                                 tf.nn.zero_fraction(x)))
 
     # Add summaries for losses.
     for loss in tf.get_collection(tf.GraphKeys.LOSSES, first_clone_scope):
       summaries.add(tf.summary.scalar('losses/%s' % loss.op.name, loss))
 
     # Add summaries for variables.
-    for variable in slim.get_model_variables():
-      summaries.add(tf.summary.histogram(variable.op.name, variable))
+    # for variable in slim.get_model_variables():
+      # summaries.add(tf.summary.histogram(variable.op.name, variable))
 
     #################################
     # Configure the moving averages #
