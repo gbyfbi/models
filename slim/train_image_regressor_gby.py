@@ -455,24 +455,24 @@ def main(_):
       # labels = slim.one_hot_encoding(
       #     labels, dataset.num_classes - FLAGS.labels_offset)
 
-      with tf.Session() as sess:
-          sess.run(tf.global_variables_initializer())
-          coord = tf.train.Coordinator()
-          threads = tf.train.start_queue_runners(sess=sess, coord=coord)
-          image_tensor = sess.run(images)
-          print(image_tensor.shape)
-          image = image_tensor[0, :, :, :]
-
-          import matplotlib.pyplot as plt
-          import numpy as np
-          plt.figure()
-          plt.imshow(image)
-          plt.axis('off')
-          plt.show()
-
-          # Finish off the filename queue coordinator.
-          coord.request_stop()
-          coord.join(threads)
+      # with tf.Session() as sess:
+      #     sess.run(tf.global_variables_initializer())
+      #     coord = tf.train.Coordinator()
+      #     threads = tf.train.start_queue_runners(sess=sess, coord=coord)
+      #     image_tensor = sess.run(images)
+      #     print(image_tensor.shape)
+      #     image = image_tensor[0, :, :, :]
+      #
+      #     import matplotlib.pyplot as plt
+      #     import numpy as np
+      #     plt.figure()
+      #     plt.imshow(image)
+      #     plt.axis('off')
+      #     plt.show()
+      #
+      #     # Finish off the filename queue coordinator.
+      #     coord.request_stop()
+      #     coord.join(threads)
 
       batch_queue = slim.prefetch_queue.prefetch_queue(
           [images, labels], capacity=2 * deploy_config.num_clones)
@@ -522,6 +522,16 @@ def main(_):
     for loss in tf.get_collection(tf.GraphKeys.LOSSES, first_clone_scope):
       summaries.add(tf.summary.scalar('losses/%s' % loss.op.name, loss))
 
+      # with tf.Session() as sess:
+      #     sess.run(tf.global_variables_initializer())
+      #     coord = tf.train.Coordinator()
+      #     threads = tf.train.start_queue_runners(sess=sess, coord=coord)
+      #     loss_tensor = sess.run(loss)
+      #     print(loss_tensor)
+      #     # print(loss_tensor.shape)
+      #     coord.request_stop()
+      #     coord.join(threads)
+
     # Add summaries for variables.
     # for variable in slim.get_model_variables():
       # summaries.add(tf.summary.histogram(variable.op.name, variable))
@@ -569,6 +579,15 @@ def main(_):
     # Add total_loss to summary.
     summaries.add(tf.summary.scalar('total_loss', total_loss))
 
+    # with tf.Session() as sess:
+    #     sess.run(tf.global_variables_initializer())
+    #     coord = tf.train.Coordinator()
+    #     threads = tf.train.start_queue_runners(sess=sess, coord=coord)
+    #     clones_gradient_list = sess.run(clones_gradients)
+    #     print(clones_gradient_list)
+    #     # print(loss_tensor.shape)
+    #     coord.request_stop()
+    #     coord.join(threads)
     # Create gradient updates.
     grad_updates = optimizer.apply_gradients(clones_gradients,
                                              global_step=global_step)
@@ -577,6 +596,19 @@ def main(_):
     update_op = tf.group(*update_ops)
     train_tensor = control_flow_ops.with_dependencies([update_op], total_loss,
                                                       name='train_op')
+
+    # with tf.Session() as sess:
+    #     sess.run(tf.global_variables_initializer())
+    #     coord = tf.train.Coordinator()
+    #     threads = tf.train.start_queue_runners(sess=sess, coord=coord)
+    #     total_loss_value = sess.run(total_loss)
+    #     grad_updates_value = sess.run(grad_updates)
+    #     train_tensor_value = sess.run(train_tensor)
+    #     total_loss_value = sess.run(total_loss)
+    #     print(total_loss_value)
+    #     # print(loss_tensor.shape)
+    #     coord.request_stop()
+    #     coord.join(threads)
 
     # Add the summaries from the first clone. These contain the summaries
     # created by model_fn and either optimize_clones() or _gather_clone_loss().
@@ -599,6 +631,7 @@ def main(_):
         summary_op=summary_op,
         number_of_steps=FLAGS.max_number_of_steps,
         log_every_n_steps=FLAGS.log_every_n_steps,
+        # log_every_n_steps=1,
         save_summaries_secs=FLAGS.save_summaries_secs,
         save_interval_secs=FLAGS.save_interval_secs,
         sync_optimizer=optimizer if FLAGS.sync_replicas else None)
