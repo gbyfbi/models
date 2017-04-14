@@ -61,7 +61,7 @@ with tf.Graph().as_default():
 
     # Create the model, use the default arg scope to configure the batch norm parameters.
     with slim.arg_scope(alexnet.alexnet_v2_arg_scope()):
-        logits, _ = alexnet.alexnet_v2(images, num_classes=dataset.num_classes, is_training=False)
+        logits, end_points = alexnet.alexnet_v2(images, num_classes=dataset.num_classes, is_training=False)
 
     probabilities = tf.nn.softmax(logits)
 
@@ -74,7 +74,7 @@ with tf.Graph().as_default():
         with slim.queues.QueueRunners(sess):
             sess.run(tf.initialize_local_variables())
             init_fn(sess)
-            np_probabilities, np_images_raw, np_labels = sess.run([probabilities, images_raw, labels])
+            np_probabilities, np_images_raw, np_labels, np_end_points, np_images = sess.run([probabilities, images_raw, labels, end_points, images])
 
             for i in xrange(batch_size):
                 image = np_images_raw[i, :, :, :]
