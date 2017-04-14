@@ -30,7 +30,7 @@ import tensorflow.contrib.slim as slim
 
 _FILE_PATTERN = 'slam_%s_*.tfrecord'
 
-SPLITS_TO_SIZES = {'train': 2, 'validation': 1}
+SPLITS_TO_SIZES = {'train': 408, 'validation': 100}
 
 _NUM_CLASSES = 6
 
