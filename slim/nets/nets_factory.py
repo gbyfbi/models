@@ -23,6 +23,7 @@ import tensorflow as tf
 
 from nets import alexnet
 from nets import alexnet_gby
+from nets import alexnet_original
 from nets import cifarnet
 from nets import inception
 from nets import lenet
@@ -34,6 +35,7 @@ from nets import vgg
 slim = tf.contrib.slim
 
 networks_map = {
+    'alexnet_original': alexnet_original.alexnet_original,
     'alexnet_v2_gby': alexnet_gby.alexnet_v2,
     'alexnet_v2': alexnet.alexnet_v2,
                 'cifarnet': cifarnet.cifarnet,
@@ -58,6 +60,7 @@ networks_map = {
                }
 
 arg_scopes_map = {
+    'alexnet_original': alexnet_original.alexnet_original_arg_scope,
     'alexnet_v2_gby': alexnet_gby.alexnet_v2_arg_scope,
     'alexnet_v2': alexnet.alexnet_v2_arg_scope,
                   'cifarnet': cifarnet.cifarnet_arg_scope,
