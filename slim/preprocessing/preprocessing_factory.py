@@ -46,6 +46,7 @@ def get_preprocessing(name, is_training=False):
     ValueError: If Preprocessing `name` is not recognized.
   """
   preprocessing_fn_map = {
+      'alexnet_original': inception_preprocessing,
       'alexnet_v2_gby': no_preprocessing,
       'alexnet_v2': inception_preprocessing,
       'cifarnet': cifarnet_preprocessing,
