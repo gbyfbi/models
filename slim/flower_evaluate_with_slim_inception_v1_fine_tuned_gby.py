@@ -51,7 +51,7 @@ flowers_data_dir = '/home/gao/Data/flower/tf_data/slim/flower_fine_tune/flowers'
 train_dir = '/home/gao/Data/flower/tf_data/slim/inception_v1_fine_tune/flowers-models/inception_v1/all'
 
 image_size = inception.inception_v1.default_image_size
-batch_size = 5
+batch_size = 32
 
 with tf.Graph().as_default():
     tf.logging.set_verbosity(tf.logging.INFO)
@@ -74,6 +74,7 @@ with tf.Graph().as_default():
     with tf.Session() as sess:
         with slim.queues.QueueRunners(sess):
 #             sess.run(tf.initialize_local_variables())
+            sess.run(tf.global_variables_initializer())
             init_fn(sess)
             np_probabilities, np_images_raw, np_labels = sess.run([probabilities, images_raw, labels])
 
