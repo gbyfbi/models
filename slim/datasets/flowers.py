@@ -27,7 +27,8 @@ import tensorflow as tf
 
 from datasets import dataset_utils
 
-slim = tf.contrib.slim
+# slim = tf.contrib.slim
+import tensorflow.contrib.slim as slim
 
 _FILE_PATTERN = 'flowers_%s_*.tfrecord'
 
