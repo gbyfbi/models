@@ -25,6 +25,7 @@ from preprocessing import inception_preprocessing
 from preprocessing import lenet_preprocessing
 from preprocessing import vgg_preprocessing
 from preprocessing import no_preprocessing
+from preprocessing import alexnet_orginal_preprocessing
 
 slim = tf.contrib.slim
 
@@ -46,7 +47,7 @@ def get_preprocessing(name, is_training=False):
     ValueError: If Preprocessing `name` is not recognized.
   """
   preprocessing_fn_map = {
-      'alexnet_original': inception_preprocessing,
+      'alexnet_original': alexnet_orginal_preprocessing,
       'alexnet_v2_gby': no_preprocessing,
       'alexnet_v2': inception_preprocessing,
       'cifarnet': cifarnet_preprocessing,
