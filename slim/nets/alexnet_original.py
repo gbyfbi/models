@@ -152,9 +152,9 @@ def alexnet_original(inputs,
   """
     end_points_collection = 'alexnet_original_end_points'
     # Collect outputs for conv2d, fully_connected and max_pool2d.
-    with slim.arg_scope([slim.conv2d, slim.fully_connected, slim.max_pool2d, conv_with_group_layer],
+    with slim.arg_scope([slim.conv2d, slim.fully_connected, slim.max_pool2d, conv_with_group_layer, slim.flatten],
                         outputs_collections=[end_points_collection]):
-        net = conv_with_group_layer(inputs, 96, [11, 11], 4, padding='SAME', scope='conv1')
+        net = conv_with_group_layer(inputs, 96, [11, 11], 4, padding='VALID', scope='conv1')
         net = slim.max_pool2d(net, [3, 3], 2, padding='VALID', scope='pool1')
         net = conv_with_group_layer(net, 256, [5, 5], padding='SAME', scope='conv2', group=2)
         net = slim.max_pool2d(net, [3, 3], 2, padding='VALID', scope='pool2')
@@ -164,14 +164,22 @@ def alexnet_original(inputs,
         net = slim.max_pool2d(net, [3, 3], 2, padding='VALID', scope='pool5')
 
         # Use conv2d instead of fully_connected layers.
-        with slim.arg_scope([slim.conv2d],
+        with slim.arg_scope([slim.conv2d, slim.fully_connected],
                             weights_initializer=trunc_normal(0.005),
                             biases_initializer=tf.constant_initializer(0.1)):
-            net = slim.conv2d(net, 4096, [6, 6], padding='VALID', scope='fc6')
+            # net = slim.conv2d(net, 4096, [6, 6], padding='VALID', scope='fc6')
+            net = slim.flatten(net, scope='flt1')
+            net = slim.fully_connected(net, 4096, scope='fc6')
             net = slim.dropout(net, dropout_keep_prob, is_training=is_training, scope='dropout6')
-            net = slim.conv2d(net, 4096, [1, 1], scope='fc7')
+            # net = slim.conv2d(net, 4096, [1, 1], scope='fc7')
+            net = slim.fully_connected(net, 4096, scope='fc7')
             net = slim.dropout(net, dropout_keep_prob, is_training=is_training, scope='dropout7')
-            net = slim.conv2d(net, num_classes, [1, 1],
+            # net = slim.conv2d(net, num_classes, [1, 1],
+            #                   activation_fn=None,
+            #                   normalizer_fn=None,
+            #                   biases_initializer=tf.zeros_initializer(),
+            #                   scope='fc8')
+            net = slim.fully_connected(net, num_classes,
                               activation_fn=None,
                               normalizer_fn=None,
                               biases_initializer=tf.zeros_initializer(),
@@ -180,10 +188,10 @@ def alexnet_original(inputs,
         # Convert end_points_collection into a end_point dict.
         from tensorflow.contrib.layers.python.layers.utils import convert_collection_to_dict
         end_points = convert_collection_to_dict(end_points_collection)
-        if spatial_squeeze:
-            net = tf.squeeze(net, [1, 2], name='fc8/squeezed')
-            end_points['fc8/squeezed'] = net
+        # if spatial_squeeze:
+        #     net = tf.squeeze(net, [1, 2], name='fc8/squeezed')
+        #     end_points['fc8/squeezed'] = net
         return net, end_points
 
 
-alexnet_original.default_image_size = 224
+alexnet_original.default_image_size = 227
