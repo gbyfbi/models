@@ -2,7 +2,7 @@ import os
 import tensorflow as tf
 from datasets import flowers, dataset_utils
 from nets import alexnet_original
-from preprocessing import inception_preprocessing
+from preprocessing import alexnet_orginal_preprocessing
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -29,7 +29,7 @@ def load_batch(dataset, batch_size=32, height=299, width=299, is_training=False)
     image_raw, label = data_provider.get(['image', 'label'])
 
     # Preprocess image for usage by Inception.
-    image = inception_preprocessing.preprocess_image(image_raw, height, width, is_training=is_training)
+    image = alexnet_orginal_preprocessing.preprocess_image(image_raw, height, width, is_training=is_training)
 
     # Preprocess the image for display purposes.
     image_raw = tf.expand_dims(image_raw, 0)
@@ -46,7 +46,11 @@ def load_batch(dataset, batch_size=32, height=299, width=299, is_training=False)
     return images, images_raw, labels
 
 flowers_data_dir = '/home/gao/Data/flower/tf_data/slim/flower_fine_tune/flowers'
-train_dir = '/home/gao/Data/flower/tf_data/slim/flower_fine_tune/flowers-models/alexnet_original'
+train_dir = '/home/gao/Data/flower/tf_data/slim/flower_fine_tune/flowers-models/alexnet_original_12345678'
+train_dir = '/home/gao/Data/flower/tf_data/slim/flower_fine_tune/flowers-models/alexnet_original_12345678_no_lrn'
+train_dir = '/home/gao/Data/flower/tf_data/slim/flower_fine_tune/flowers-models/alexnet_original_678_no_lrn'
+train_dir = '/home/gao/Data/flower/tf_data/slim/flower_fine_tune/flowers-models/alexnet_original_12345678_no_lrn_sub_RGB_mean_after_678'
+# train_dir = '/home/gao/Data/flower/tf_data/slim/flower_fine_tune/flowers-models/alexnet_original_finetuned_all_layers'
 image_size = alexnet_original.alexnet_original.default_image_size
 batch_size = 32
 
