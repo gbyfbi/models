@@ -53,6 +53,16 @@ def alexnet_original_arg_scope(weight_decay=0.0005):
                 return arg_sc
 
 
+@slim.add_arg_scope
+def lrn_layer(inputs, radius, alpha, beta, name, bias=1.0, outputs_collections=None):
+    outputs = tf.nn.local_response_normalization(inputs,
+                                              depth_radius=radius,
+                                              alpha=alpha,
+                                              beta=beta,
+                                              bias=bias,
+                                              name=name)
+    from tensorflow.contrib.layers.python.layers import utils
+    return utils.collect_named_outputs(outputs_collections, name, outputs)
 # def convolution(inputs,
 #                 num_outputs,
 #                 kernel_size,
@@ -152,11 +162,14 @@ def alexnet_original(inputs,
   """
     end_points_collection = 'alexnet_original_end_points'
     # Collect outputs for conv2d, fully_connected and max_pool2d.
-    with slim.arg_scope([slim.conv2d, slim.fully_connected, slim.max_pool2d, conv_with_group_layer, slim.flatten],
+    with slim.arg_scope([slim.conv2d, slim.fully_connected, slim.max_pool2d, conv_with_group_layer, slim.flatten,
+                         lrn_layer],
                         outputs_collections=[end_points_collection]):
         net = conv_with_group_layer(inputs, 96, [11, 11], 4, padding='VALID', scope='conv1')
+        # net = lrn_layer(net, radius=2, alpha=2e-05, beta=0.75, name='norm1', bias=1.0)
         net = slim.max_pool2d(net, [3, 3], 2, padding='VALID', scope='pool1')
         net = conv_with_group_layer(net, 256, [5, 5], padding='SAME', scope='conv2', group=2)
+        # net = lrn_layer(net, radius=2, alpha=2e-05, beta=0.75, name='norm2', bias=1.0)
         net = slim.max_pool2d(net, [3, 3], 2, padding='VALID', scope='pool2')
         net = conv_with_group_layer(net, 384, [3, 3], padding='SAME', scope='conv3')
         net = conv_with_group_layer(net, 384, [3, 3], padding='SAME', scope='conv4', group=2)
@@ -165,7 +178,7 @@ def alexnet_original(inputs,
 
         # Use conv2d instead of fully_connected layers.
         with slim.arg_scope([slim.conv2d, slim.fully_connected],
-                            weights_initializer=trunc_normal(0.005),
+                            weights_initializer=trunc_normal(0.01),
                             biases_initializer=tf.constant_initializer(0.1)):
             # net = slim.conv2d(net, 4096, [6, 6], padding='VALID', scope='fc6')
             net = slim.flatten(net, scope='flt1')
