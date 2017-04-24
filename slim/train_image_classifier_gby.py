@@ -658,14 +658,15 @@ def main(_):
         ###########################
         # Kicks off the training. #
         ###########################
+        init_op = _get_init_op()
         slim.learning.train(
             train_tensor,
             logdir=FLAGS.train_dir,
             master=FLAGS.master,
             is_chief=(FLAGS.task == 0),
-            init_op=_get_init_op(),
-            # init_fn=_get_init_fn(),
-            init_fn=None,
+            init_op=init_op,
+            init_fn=_get_init_fn() if not init_op else None,
+            # init_fn=None,
             summary_op=summary_op,
             number_of_steps=FLAGS.max_number_of_steps,
             log_every_n_steps=FLAGS.log_every_n_steps,
