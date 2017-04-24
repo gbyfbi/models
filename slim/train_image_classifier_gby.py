@@ -446,19 +446,19 @@ def _get_init_op():
                         var = tf.get_variable(subkey)
                         if var not in variables_to_restore:
                             raise ValueError
-                        # var_init_op = var.assign(data_dict[key][subkey])
-                        # var_init_op_list.append(var_init_op)
+                        var_init_op = var.assign(data_dict[key][subkey])
+                        var_init_op_list.append(var_init_op)
                         print("assign pretrain model " + subkey + " to " + key)
                     except ValueError:
                         print("ignore " + key + '/' + subkey)
                         if not FLAGS.ignore_missing_vars:
                             raise
-        # numpy_init_op = control_flow_ops.group(*var_init_op_list, name='init_var_from_numpy')
+        numpy_init_op = control_flow_ops.group(*var_init_op_list, name='init_var_from_numpy')
         global_init_op = tf.global_variables_initializer()
-        # group_op = control_flow_ops.group(global_init_op, numpy_init_op, name='all_var_init_op')
+        group_op = control_flow_ops.group(global_init_op, numpy_init_op, name='all_var_init_op')
         # numpy_init_op = control_flow_ops.with_dependencies(global_init_op, numpy_init_op)
-        # return group_op
-        return global_init_op
+        return group_op
+        # return global_init_op
     else:
         return 0
 
