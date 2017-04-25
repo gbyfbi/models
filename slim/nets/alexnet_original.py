@@ -201,9 +201,6 @@ def alexnet_original(inputs,
         # Convert end_points_collection into a end_point dict.
         from tensorflow.contrib.layers.python.layers.utils import convert_collection_to_dict
         end_points = convert_collection_to_dict(end_points_collection)
-        # if spatial_squeeze:
-        #     net = tf.squeeze(net, [1, 2], name='fc8/squeezed')
-        #     end_points['fc8/squeezed'] = net
         return net, end_points
 
 
