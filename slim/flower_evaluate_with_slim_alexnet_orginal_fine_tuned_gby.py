@@ -50,6 +50,7 @@ train_dir = '/home/gao/Data/flower/tf_data/slim/flower_fine_tune/flowers-models/
 train_dir = '/home/gao/Data/flower/tf_data/slim/flower_fine_tune/flowers-models/alexnet_original_12345678_no_lrn'
 train_dir = '/home/gao/Data/flower/tf_data/slim/flower_fine_tune/flowers-models/alexnet_original_678_no_lrn'
 train_dir = '/home/gao/Data/flower/tf_data/slim/flower_fine_tune/flowers-models/alexnet_original_12345678_no_lrn_sub_RGB_mean_after_678'
+train_dir = '/home/gao/Data/flower/tf_data/slim/flower_fine_tune/flowers-models/alexnet_original_12345678_no_lrn_sub_RGB_mean_after_678_ckpt_convert_from_npy'
 # train_dir = '/home/gao/Data/flower/tf_data/slim/flower_fine_tune/flowers-models/alexnet_original_finetuned_all_layers'
 image_size = alexnet_original.alexnet_original.default_image_size
 batch_size = 32
