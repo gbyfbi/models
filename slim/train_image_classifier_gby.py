@@ -658,7 +658,11 @@ def main(_):
         ###########################
         # Kicks off the training. #
         ###########################
-        init_op = _get_init_op()
+        # with tf.Session(config=tf.ConfigProto(log_device_placement=True)) as sess:
+        #     restore_fn = _get_init_fn()
+        #     restore_fn(sess)
+        # init_op = _get_init_op()
+        init_op = 0
         slim.learning.train(
             train_tensor,
             logdir=FLAGS.train_dir,
