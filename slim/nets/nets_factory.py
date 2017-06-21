@@ -27,6 +27,7 @@ from nets import alexnet_original
 from nets import cifarnet
 from nets import inception
 from nets import lenet
+from nets import mobilenet_v1
 from nets import overfeat
 from nets import resnet_v1
 from nets import resnet_v2
@@ -57,6 +58,7 @@ networks_map = {
                 'resnet_v2_101': resnet_v2.resnet_v2_101,
                 'resnet_v2_152': resnet_v2.resnet_v2_152,
                 'resnet_v2_200': resnet_v2.resnet_v2_200,
+                'mobilenet_v1': mobilenet_v1.mobilenet_v1,
                }
 
 arg_scopes_map = {
@@ -83,6 +85,7 @@ arg_scopes_map = {
                   'resnet_v2_101': resnet_v2.resnet_arg_scope,
                   'resnet_v2_152': resnet_v2.resnet_arg_scope,
                   'resnet_v2_200': resnet_v2.resnet_arg_scope,
+                  'mobilenet_v1': mobilenet_v1.mobilenet_v1_arg_scope,
                  }
 
 
