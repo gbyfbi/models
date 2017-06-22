@@ -41,7 +41,7 @@ with tf.Graph().as_default():
         sess.run(numpy_init_op)
         saver = tf.train.Saver(tf.get_collection(tf.GraphKeys.MODEL_VARIABLES)) # MODEL_VARIABLES is just for contrib layers or the ones I defined:)
         saver.save(sess, output_checkpoint_file_path)
-        # writer = tf.summary.FileWriter(output_checkpoint_dir, sess.graph)
-        # writer.close()
+        writer = tf.summary.FileWriter(output_checkpoint_dir, sess.graph)
+        writer.close()
 
 
