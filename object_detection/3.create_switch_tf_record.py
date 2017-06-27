@@ -182,10 +182,12 @@ def create_tf_record(output_filename,
 
 # TODO: Add test for pet/PASCAL main files.
 def main(_):
+  if not os.path.isdir(FLAGS.output_dir):
+      os.mkdir(FLAGS.output_dir)
   data_dir = FLAGS.data_dir
   label_map_dict = label_map_util.get_label_map_dict(FLAGS.label_map_path)
 
-  logging.info('Reading from Pet dataset.')
+  logging.info('Reading from switch dataset.')
   image_dir = os.path.join(data_dir, 'images')
   annotations_dir = os.path.join(data_dir, 'annotations')
   examples_path = os.path.join(annotations_dir, 'trainval.txt')
@@ -202,8 +204,8 @@ def main(_):
   logging.info('%d training and %d validation examples.',
                len(train_examples), len(val_examples))
 
-  train_output_path = os.path.join(FLAGS.output_dir, 'pet_train.record')
-  val_output_path = os.path.join(FLAGS.output_dir, 'pet_val.record')
+  train_output_path = os.path.join(FLAGS.output_dir, 'switch_train.record')
+  val_output_path = os.path.join(FLAGS.output_dir, 'switch_val.record')
   create_tf_record(train_output_path, label_map_dict, annotations_dir,
                    image_dir, train_examples)
   create_tf_record(val_output_path, label_map_dict, annotations_dir,

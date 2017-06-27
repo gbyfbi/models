@@ -5,10 +5,11 @@ import re
 from PIL import Image
 
 from lxml import etree
-image_path_list_path = '/home/gao/Downloads/tensorflow_models_gby/object_detection/collimator_switch_images/images.txt'
-tracking_result_list_path = '/home/gao/Downloads/tensorflow_models_gby/object_detection/collimator_switch_images/output.txt'
-output_xml_dir = '/home/gao/Downloads/tensorflow_models_gby/object_detection/collimator_switch_xmls'
-os.mkdir(output_xml_dir)
+image_path_list_path = '/home/gao/Downloads/tensorflow_models_gby/object_detection/collimator_switch_data/images/images.txt'
+tracking_result_list_path = '/home/gao/Downloads/tensorflow_models_gby/object_detection/collimator_switch_data/images/output.txt'
+output_xml_dir = '/home/gao/Downloads/tensorflow_models_gby/object_detection/collimator_switch_data/annotations/xmls'
+if not os.path.isdir(output_xml_dir):
+    os.mkdir(output_xml_dir)
 with open(image_path_list_path, 'r') as f:
     image_path_list = map(lambda l: l.rstrip('\n'), f.readlines())
 print(image_path_list)
@@ -26,7 +27,7 @@ for image_path, tracking_result in zip(image_path_list, tracking_result_list):
     xmax = str(int(xmin) + int(width))
     ymax = str(int(ymin) + int(height))
     print(xmin, ymin, xmax, ymax)
-    annotation_xml = etree.Element('Annotation')
+    annotation_xml = etree.Element('annotation')
     folder_xml = etree.SubElement(annotation_xml, 'folder')
     folder_xml.text = 'collimator_switch'
     filename_xml = etree.SubElement(annotation_xml, 'filename')

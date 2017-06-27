@@ -5,5 +5,5 @@ item {
 
 item {
   id: 1
-  name: 'switch'
+  name: 'collimator_with_switch'
 }
