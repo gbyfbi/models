@@ -21,7 +21,7 @@ from utils import visualization_utils as vis_util
 # What model to download.
 IMAGE_DIR = '/home/gao/Downloads/tensorflow_models_gby/object_detection/collimator_switch_data/images'
 IMAGE_EXT = '.jpg'
-TRAINING_DIR = '/home/gao/Downloads/tensorflow_models_gby/object_detection/collimator_switch_data/training'
+TRAINING_DIR = '/home/gao/Downloads/tensorflow_models_gby/object_detection/collimator_switch_data/training_ssd_mobilenet_v1'
 LABEL_DIR = '/home/gao/Downloads/tensorflow_models_gby/object_detection/data'
 PATH_TO_CKPT = os.path.join(TRAINING_DIR, 'frozen_inference_graph.pb')
 assert os.path.isfile(PATH_TO_CKPT)

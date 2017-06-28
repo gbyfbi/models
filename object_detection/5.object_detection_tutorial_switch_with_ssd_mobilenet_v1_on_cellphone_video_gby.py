@@ -19,9 +19,9 @@ from utils import label_map_util
 from utils import visualization_utils as vis_util
 
 # What model to download.
-IMAGE_DIR = '/home/gao/Downloads/tensorflow_models_gby/object_detection/collimator_switch_data/images'
+IMAGE_DIR = '/exchange/cell_phone_collimator_video_images'
 IMAGE_EXT = '.jpg'
-TRAINING_DIR = '/home/gao/Downloads/tensorflow_models_gby/object_detection/collimator_switch_data/training'
+TRAINING_DIR = '/home/gao/Downloads/tensorflow_models_gby/object_detection/collimator_switch_data/training_ssd_mobilenet_v1'
 LABEL_DIR = '/home/gao/Downloads/tensorflow_models_gby/object_detection/data'
 PATH_TO_CKPT = os.path.join(TRAINING_DIR, 'frozen_inference_graph.pb')
 assert os.path.isfile(PATH_TO_CKPT)
@@ -62,14 +62,15 @@ def load_image_into_numpy_array(image):
 # image1.jpg
 # image2.jpg
 # If you want to test the code with your images, just add path to the images to the TEST_IMAGE_PATHS.
-PATH_TO_TEST_IMAGES_DIR = 'test_images'
+# PATH_TO_TEST_IMAGES_DIR = 'test_images'
 # TEST_IMAGE_PATHS = [ os.path.join(PATH_TO_TEST_IMAGES_DIR, 'image{}.jpg'.format(i)) for i in range(1, 3) ]
 import glob
-TEST_IMAGE_PATHS = glob.glob(PATH_TO_TEST_IMAGES_DIR+"/*.*g")
-with open('/home/gao/Downloads/tensorflow_models_gby/object_detection/collimator_switch_data/annotations/test.txt', 'r') as f:
-    TEST_IMAGE_PATHS = map(lambda l: os.path.join(IMAGE_DIR, l.split(' ')[0]+IMAGE_EXT), f.readlines())
-import random
-random.shuffle(TEST_IMAGE_PATHS)
+TEST_IMAGE_PATHS = glob.glob(IMAGE_DIR +"/*.*g")
+TEST_IMAGE_PATHS = sorted(TEST_IMAGE_PATHS)
+# with open('/home/gao/Downloads/tensorflow_models_gby/object_detection/collimator_switch_data/annotations/test.txt', 'r') as f:
+#     TEST_IMAGE_PATHS = map(lambda l: os.path.join(IMAGE_DIR, l.split(' ')[0]+IMAGE_EXT), f.readlines())
+# import random
+# random.shuffle(TEST_IMAGE_PATHS)
 # TEST_IMAGE_PATHS = TEST_IMAGE_PATHS[:30]
 
 # Size, in inches, of the output images.
@@ -110,7 +111,7 @@ with detection_graph.as_default():
           np.squeeze(scores),
           category_index,
           use_normalized_coordinates=True,
-          line_thickness=2)
+          line_thickness=8)
       # plt.figure(figsize=IMAGE_SIZE)
       if img_to_show is None:
           img_to_show = plt.imshow(image_np)
