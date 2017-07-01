@@ -1,0 +1,29 @@
+item {
+  id: 0
+  name: 'none_of_the_above'
+}
+
+item {
+  id: 1
+  name: 'hand'
+}
+
+item {
+  id: 2
+  name: 'bolt'
+}
+
+item {
+  id: 3
+  name: 'mm'
+}
+
+item {
+  id: 4
+  name: 'slc'
+}
+
+item {
+  id: 5
+  name: 'meter'
+}
