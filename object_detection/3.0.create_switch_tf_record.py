@@ -198,14 +198,14 @@ def main(_):
   random.seed(42)
   random.shuffle(examples_list)
   num_examples = len(examples_list)
-  num_train = int(0.7 * num_examples)
+  num_train = int(0.8 * num_examples)
   train_examples = examples_list[:num_train]
   val_examples = examples_list[num_train:]
   logging.info('%d training and %d validation examples.',
                len(train_examples), len(val_examples))
 
-  train_output_path = os.path.join(FLAGS.output_dir, 'switch_train.record')
-  val_output_path = os.path.join(FLAGS.output_dir, 'switch_val.record')
+  train_output_path = os.path.join(FLAGS.output_dir, 'train.record')
+  val_output_path = os.path.join(FLAGS.output_dir, 'val.record')
   create_tf_record(train_output_path, label_map_dict, annotations_dir,
                    image_dir, train_examples)
   create_tf_record(val_output_path, label_map_dict, annotations_dir,
