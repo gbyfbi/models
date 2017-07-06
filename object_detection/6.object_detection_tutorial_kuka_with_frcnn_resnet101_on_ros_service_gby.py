@@ -63,8 +63,8 @@ class ObjectDetector:
         self.cv_bridge = CvBridge()
         self.display_thread = threading.Thread(target=self.__daemon_display_image)
         self.display_thread.start()
-        self.time_synchronizer = TimeSynchronizer((MsgFilterSubscriber(self.color_image_topic_name, RosImage),
-                                                  MsgFilterSubscriber(self.depth_image_topic_name, RosImage)), 10)
+        # self.time_synchronizer = TimeSynchronizer((MsgFilterSubscriber(self.color_image_topic_name, RosImage),
+        #                                           MsgFilterSubscriber(self.depth_image_topic_name, RosImage)), 10)
         # self.time_synchronizer.registerCallback(self.__callback_on_rgb_and_depth_images)
         # while self.tcp_depth_camera_info_msg is None or self.tcp_depth_pre_computed_3d_rays is None or self.pan_tilt_depth_camera_info_msg is None or self.pan_tilt_depth_pre_computed_3d_rays is None:
         threading.Timer(1, self.nothing, [222]).start()
@@ -78,12 +78,24 @@ class ObjectDetector:
         depth_cv_image = self.cv_bridge.imgmsg_to_cv2(depth_image_msg, "mono16")
         self.display_image_on_window(rgb_cv_image, "color image")
         self.display_image_on_window(depth_cv_image, "depth image")
-        buffer_index = (self.image_index + 1) % self.image_buffer_len
-        self.color_image_buffer[buffer_index] = rgb_cv_image
-        self.depth_image_buffer[buffer_index] = depth_cv_image
         self.mutex_image_index.acquire(True)
         self.image_index += 1
+        local_image_index = self.image_index
         self.mutex_image_index.release()
+        buffer_index = local_image_index % self.image_buffer_len
+        self.color_image_buffer[buffer_index] = rgb_cv_image
+        self.depth_image_buffer[buffer_index] = depth_cv_image
+        is_finished = False
+        while not is_finished:
+            sys_time.sleep(0.001)
+            self.mutex_image_index.acquire(True)
+            self.mutex_processed_image_index.acquire()
+            if self.processed_image_index >= local_image_index:
+                is_finished = True
+            self.mutex_processed_image_index.release()
+            self.mutex_image_index.release()
+        res = TensorflowObjectDetectionResponse(self.polygon_bnd_buffer[buffer_index])
+        return res
 
     def __callback_on_rgb_and_depth_images(self, rgb_ros_image_msg, depth_ros_image_msg):
         # assert rgb_ros_image_msg.header.stamp == depth_ros_image_msg.header.stamp
@@ -100,18 +112,6 @@ class ObjectDetector:
         self.mutex_image_index.acquire(True)
         self.image_index += 1
         self.mutex_image_index.release()
-        is_finished = False
-        while not is_finished:
-            sys_time.sleep(0.001)
-            self.mutex_image_index.acquire(True)
-            self.mutex_processed_image_index.acquire()
-            if self.processed_image_index == self.image_index:
-                is_finished = True
-            self.mutex_processed_image_index.release()
-            self.mutex_image_index.release()
-        res = TensorflowObjectDetectionResponse(self.polygon_bnd_buffer[buffer_index])
-        return res
-
 
     def display_image_on_window(self, image, window_name, resize_x_axis=1., resize_y_axis=1.):
         self.interThreadQueue.put((window_name, cv2.resize(image, None, fx=resize_x_axis, fy=resize_y_axis)))
@@ -150,8 +150,8 @@ class ObjectDetector:
                     self.mutex_image_index.acquire()
                     local_image_index = self.image_index
                     self.mutex_image_index.release()
-                    if local_image_index > self.processed_image_index:
-                        buffer_index = local_image_index % self.image_buffer_len
+                    for i_image in range(self.processed_image_index+1, local_image_index+1):
+                        buffer_index = i_image % self.image_buffer_len
                         image_np = self.color_image_buffer[buffer_index]
                         # Expand dimensions since the model expects images to have shape: [1, None, None, 3]
                         image_np_expanded = np.expand_dims(image_np, axis=0)
@@ -187,11 +187,11 @@ class ObjectDetector:
                         polygon_msg_list = []
                         for i in range(boxes_np.shape[0]):
                             if scores_np[i] > 0.5:
-                                box = tuple(boxes[i].tolist())
+                                box = tuple(boxes_np[i].tolist())
                                 polygon_msg_list.append(make_polygon(box))
                         self.polygon_bnd_buffer[buffer_index] = polygon_msg_list
                         self.mutex_processed_image_index.acquire(True)
-                        self.processed_image_index = local_image_index
+                        self.processed_image_index = i_image
                         self.mutex_processed_image_index.release()
 
                         # plt.figure(figsize=IMAGE_SIZE)
@@ -202,7 +202,7 @@ class ObjectDetector:
                         plt.pause(.001)
                         plt.draw()
                     # sys_time.sleep(.01)
-                    sys_time.sleep(.01)
+                    sys_time.sleep(.001)
                     # plt.figure()
                     # plt.imshow(image_np)
                     # plt.show()
