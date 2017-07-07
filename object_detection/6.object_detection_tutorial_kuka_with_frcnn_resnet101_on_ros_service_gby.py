@@ -69,15 +69,15 @@ class ObjectDetector:
         # while self.tcp_depth_camera_info_msg is None or self.tcp_depth_pre_computed_3d_rays is None or self.pan_tilt_depth_camera_info_msg is None or self.pan_tilt_depth_pre_computed_3d_rays is None:
         threading.Timer(1, self.nothing, [222]).start()
         threading.Timer(1, self.detect_with_tf, []).start()
-        self.obj_detect_srv = rospy.Service('object_detection', TensorflowObjectDetection, self.__obj_detect_srv_cb)
+        self.obj_detect_srv = rospy.Service('object_detection', TensorflowObjectDetection, self.__callback_on_obj_detect_service)
 
-    def __obj_detect_srv_cb(self, req):
+    def __callback_on_obj_detect_service(self, req):
         rgb_image_msg = req.rgb_image
         depth_image_msg = req.depth_image
         rgb_cv_image = self.cv_bridge.imgmsg_to_cv2(rgb_image_msg, "rgb8")
         depth_cv_image = self.cv_bridge.imgmsg_to_cv2(depth_image_msg, "mono16")
-        self.display_image_on_window(rgb_cv_image, "color image")
-        self.display_image_on_window(depth_cv_image, "depth image")
+        # self.display_image_on_window(rgb_cv_image, "color image")
+        # self.display_image_on_window(depth_cv_image, "depth image")
         self.mutex_image_index.acquire(True)
         self.image_index += 1
         local_image_index = self.image_index
@@ -97,7 +97,7 @@ class ObjectDetector:
         res = TensorflowObjectDetectionResponse(self.polygon_bnd_buffer[buffer_index])
         return res
 
-    def __callback_on_rgb_and_depth_images(self, rgb_ros_image_msg, depth_ros_image_msg):
+    def __callback_on_rgb_and_depth_images_topic(self, rgb_ros_image_msg, depth_ros_image_msg):
         # assert rgb_ros_image_msg.header.stamp == depth_ros_image_msg.header.stamp
         # rgb_cv_image = self.cv_bridge.imgmsg_to_cv2(rgb_ros_image_msg, "bgr8")
         rgb_cv_image = self.cv_bridge.imgmsg_to_cv2(rgb_ros_image_msg, "rgb8")
@@ -179,8 +179,10 @@ class ObjectDetector:
                         boxes_np = np.squeeze(boxes)
                         scores_np = np.squeeze(scores)
 
-                        def make_polygon(box):
-                            points = [Point32(0, 0, 0), Point32(1, 0, 0), Point32(1, 1, 0), Point32(0, 1, 0)]
+                        def make_polygon(box, score):
+                            ymin, xmin, ymax, xmax = box
+                            points = [Point32(xmin, ymin, score), Point32(xmin, ymax, score),
+                                      Point32(xmax, ymax, score), Point32(xmax, ymin, score)]
                             polygon = Polygon(points)
                             return polygon
 
@@ -188,7 +190,7 @@ class ObjectDetector:
                         for i in range(boxes_np.shape[0]):
                             if scores_np[i] > 0.5:
                                 box = tuple(boxes_np[i].tolist())
-                                polygon_msg_list.append(make_polygon(box))
+                                polygon_msg_list.append(make_polygon(box, scores_np[i]))
                         self.polygon_bnd_buffer[buffer_index] = polygon_msg_list
                         self.mutex_processed_image_index.acquire(True)
                         self.processed_image_index = i_image
