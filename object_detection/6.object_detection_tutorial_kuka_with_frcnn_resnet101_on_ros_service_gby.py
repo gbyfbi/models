@@ -94,7 +94,9 @@ class ObjectDetector:
                 is_finished = True
             self.mutex_processed_image_index.release()
             self.mutex_image_index.release()
-        res = TensorflowObjectDetectionResponse(self.polygon_bnd_buffer[buffer_index])
+        res = TensorflowObjectDetectionResponse(self.polygon_bnd_buffer[buffer_index]["ploygon"],
+                                                self.polygon_bnd_buffer[buffer_index]["class_name"],
+                                                self.polygon_bnd_buffer[buffer_index]["score"])
         return res
 
     def __callback_on_rgb_and_depth_images_topic(self, rgb_ros_image_msg, depth_ros_image_msg):
@@ -178,20 +180,28 @@ class ObjectDetector:
                             line_thickness=2)
                         boxes_np = np.squeeze(boxes)
                         scores_np = np.squeeze(scores)
+                        classes_np = np.squeeze(classes).astype(np.int32)
 
-                        def make_polygon(box, score):
+                        def make_polygon(box):
                             ymin, xmin, ymax, xmax = box
-                            points = [Point32(xmin, ymin, score), Point32(xmin, ymax, score),
-                                      Point32(xmax, ymax, score), Point32(xmax, ymin, score)]
+                            points = [Point32(xmin, ymin, 0), Point32(xmin, ymax, 0),
+                                      Point32(xmax, ymax, 0), Point32(xmax, ymin, 0)]
                             polygon = Polygon(points)
                             return polygon
 
-                        polygon_msg_list = []
+                        bnd_polygon_list = []
+                        bnd_score_list = []
+                        bnd_class_name_list = []
                         for i in range(boxes_np.shape[0]):
                             if scores_np[i] > 0.5:
                                 box = tuple(boxes_np[i].tolist())
-                                polygon_msg_list.append(make_polygon(box, scores_np[i]))
-                        self.polygon_bnd_buffer[buffer_index] = polygon_msg_list
+                                class_name = category_index[classes_np[i]]['name'].encode('ascii', 'replace')
+                                bnd_polygon_list.append(make_polygon(box))
+                                bnd_score_list.append(scores_np[i])
+                                bnd_class_name_list.append(class_name)
+                        self.polygon_bnd_buffer[buffer_index] = {"ploygon": bnd_polygon_list,
+                                                                 "score": bnd_score_list,
+                                                                 "class_name": bnd_class_name_list}
                         self.mutex_processed_image_index.acquire(True)
                         self.processed_image_index = i_image
                         self.mutex_processed_image_index.release()
