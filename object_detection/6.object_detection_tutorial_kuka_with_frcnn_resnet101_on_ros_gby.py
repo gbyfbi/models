@@ -49,6 +49,7 @@ class ObjectDetector:
     def __init__(self, ):
         self.interThreadQueue = Queue.Queue()
         self.rgb_cv_image_queue = Queue.Queue()
+        self.result_bbox_image_queue = Queue.Queue()
         self.depth_image_topic_name = "/camera/depth_registered/image_raw"
         self.color_image_topic_name = "/camera/rgb/image_raw"
         self.image_buffer_len = 100
@@ -61,19 +62,32 @@ class ObjectDetector:
         self.time_synchronizer = TimeSynchronizer((MsgFilterSubscriber(self.color_image_topic_name, RosImage),
                                                   MsgFilterSubscriber(self.depth_image_topic_name, RosImage)), 10)
         self.time_synchronizer.registerCallback(self.__callback_on_rgb_and_depth_images)
+        self.image_with_bbox_pub = rospy.Publisher('image_with_bbox', RosImage, queue_size=10)
         # while self.tcp_depth_camera_info_msg is None or self.tcp_depth_pre_computed_3d_rays is None or self.pan_tilt_depth_camera_info_msg is None or self.pan_tilt_depth_pre_computed_3d_rays is None:
         threading.Timer(1, self.nothing, [222]).start()
         threading.Timer(1, self.detect_with_tf, []).start()
+        threading.Timer(1, self.pub_result_image, []).start()
+
+    def pub_result_image(self, ):
+        while True:
+            while self.result_bbox_image_queue.empty() is False:
+                image_np = self.result_bbox_image_queue.get()
+                self.image_with_bbox_pub.publish(self.cv_bridge.cv2_to_imgmsg(image_np, "rgb8"))
+            sys_time.sleep(.01)
+        pass
 
     def __callback_on_rgb_and_depth_images(self, rgb_ros_image_msg, depth_ros_image_msg):
         # assert rgb_ros_image_msg.header.stamp == depth_ros_image_msg.header.stamp
         # rgb_cv_image = self.cv_bridge.imgmsg_to_cv2(rgb_ros_image_msg, "bgr8")
         rgb_cv_image = self.cv_bridge.imgmsg_to_cv2(rgb_ros_image_msg, "rgb8")
+        bgr_cv_image = cv2.cvtColor(rgb_cv_image, cv2.COLOR_RGB2BGR)
         depth_cv_image = self.cv_bridge.imgmsg_to_cv2(depth_ros_image_msg, "mono16")
-        self.display_image_on_window(rgb_cv_image, "color image")
+        # self.display_image_on_window(rgb_cv_image, "color image")
+        self.display_image_on_window(bgr_cv_image, "color image")
         self.display_image_on_window(depth_cv_image, "depth image")
         buffer_index = (self.image_index + 1) % self.image_buffer_len
         self.color_image_buffer[buffer_index] = rgb_cv_image
+        # self.color_image_buffer[buffer_index] = bgr_cv_image
         self.depth_image_buffer[buffer_index] = depth_cv_image
         self.image_index += 1
 
@@ -141,12 +155,14 @@ class ObjectDetector:
                             use_normalized_coordinates=True,
                             line_thickness=2)
                         # plt.figure(figsize=IMAGE_SIZE)
-                        if img_to_show is None:
-                            img_to_show = plt.imshow(image_np)
-                        else:
-                            img_to_show.set_data(image_np)
-                        plt.pause(.001)
-                        plt.draw()
+                        # self.display_image_on_window(image_np, "result")
+                        self.result_bbox_image_queue.put(image_np)
+                        # if img_to_show is None:
+                        #     img_to_show = plt.imshow(image_np)
+                        # else:
+                        #     img_to_show.set_data(image_np)
+                        # plt.pause(.001)
+                        # plt.draw()
                     # sys_time.sleep(.01)
                     sys_time.sleep(.01)
                     # plt.figure()
