@@ -32,6 +32,7 @@ from geometry_msgs.msg import Point32
 import std_msgs.msg
 import time as sys_time
 
+os.environ["CUDA_VISIBLE_DEVICES"]="1"
 # What model to download.
 TRAINING_DIR = '/home/gao/Downloads/tensorflow_models_gby/object_detection/vinum_data/training_faster_rcnn_resnet101'
 LABEL_DIR = '/home/gao/Downloads/tensorflow_models_gby/object_detection/data'
@@ -101,7 +102,7 @@ class ObjectDetector:
                 self.color_image_buffer[buffer_index] = opencv_img
                 self.image_index += 1
                 # rospy.sleep(0.08)
-                rospy.sleep(2)
+                rospy.sleep(3)
 
     def __callback_on_rgb_and_depth_images(self, rgb_ros_image_msg, depth_ros_image_msg):
         # assert rgb_ros_image_msg.header.stamp == depth_ros_image_msg.header.stamp
