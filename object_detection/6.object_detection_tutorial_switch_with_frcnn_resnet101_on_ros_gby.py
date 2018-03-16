@@ -33,8 +33,6 @@ import std_msgs.msg
 import time as sys_time
 
 # What model to download.
-IMAGE_DIR = '/home/gao/Downloads/tensorflow_models_gby/object_detection/collimator_switch_data/images'
-IMAGE_EXT = '.jpg'
 TRAINING_DIR = '/home/gao/Downloads/tensorflow_models_gby/object_detection/collimator_switch_data/training'
 LABEL_DIR = '/home/gao/Downloads/tensorflow_models_gby/object_detection/data'
 PATH_TO_CKPT = os.path.join(TRAINING_DIR, 'frozen_inference_graph.pb')
@@ -118,28 +116,14 @@ class ObjectDetector:
             return np.array(image.getdata()).reshape(
                 (im_height, im_width, 3)).astype(np.uint8)
 
-
-        PATH_TO_TEST_IMAGES_DIR = 'test_images'
-        # TEST_IMAGE_PATHS = [ os.path.join(PATH_TO_TEST_IMAGES_DIR, 'image{}.jpg'.format(i)) for i in range(1, 3) ]
-        import glob
-
-        TEST_IMAGE_PATHS = glob.glob(PATH_TO_TEST_IMAGES_DIR + "/*.*g")
-        with open('/home/gao/Downloads/tensorflow_models_gby/object_detection/collimator_switch_data/annotations/test.txt',
-                  'r') as f:
-            TEST_IMAGE_PATHS = map(lambda l: os.path.join(IMAGE_DIR, l.split(' ')[0] + IMAGE_EXT), f.readlines())
-        import random
-
-        random.shuffle(TEST_IMAGE_PATHS)
-        # TEST_IMAGE_PATHS = TEST_IMAGE_PATHS[:30]
-
-        # Size, in inches, of the output images.
         img_to_show = None
         with detection_graph.as_default():
             with tf.Session(graph=detection_graph) as sess:
                 while True:
                     if self.image_index >= 0:
                         buffer_index = self.image_index % self.image_buffer_len
-                        image_np = self.color_image_buffer[buffer_index]
+                        # image_np = self.color_image_buffer[buffer_index]
+                        image_np = np.copy(self.color_image_buffer[buffer_index])
                         # Expand dimensions since the model expects images to have shape: [1, None, None, 3]
                         image_np_expanded = np.expand_dims(image_np, axis=0)
                         image_tensor = detection_graph.get_tensor_by_name('image_tensor:0')
@@ -171,7 +155,7 @@ class ObjectDetector:
                         plt.pause(.001)
                         plt.draw()
                     # sys_time.sleep(.01)
-                    sys_time.sleep(.01)
+                    sys_time.sleep(.001)
                     # plt.figure()
                     # plt.imshow(image_np)
                     # plt.show()
