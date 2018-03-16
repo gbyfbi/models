@@ -31,8 +31,6 @@ from sensor_msgs.msg import PointCloud
 from geometry_msgs.msg import Point32
 import std_msgs.msg
 import time as sys_time
-from iiwa_msgs.srv import TensorflowObjectDetection, TensorflowObjectDetectionResponse
-from geometry_msgs.msg import Polygon
 
 # What model to download.
 TRAINING_DIR = '/home/gao/Downloads/tensorflow_models_gby/object_detection/kuka_innovation_data/training_faster_rcnn_resnet101'
@@ -50,73 +48,73 @@ from message_filters import TimeSynchronizer, Subscriber as MsgFilterSubscriber
 class ObjectDetector:
     def __init__(self, ):
         self.interThreadQueue = Queue.Queue()
-        self.image_index = -1
-        self.mutex_image_index = threading.Lock()
-        self.processed_image_index = -1
-        self.mutex_processed_image_index = threading.Lock()
+        self.rgb_cv_image_queue = Queue.Queue()
+        self.result_bbox_image_queue = Queue.Queue()
         self.depth_image_topic_name = "/camera/depth_registered/image_raw"
         self.color_image_topic_name = "/camera/rgb/image_raw"
         self.image_buffer_len = 100
         self.depth_image_buffer = [None] * self.image_buffer_len
         self.color_image_buffer = [None] * self.image_buffer_len
-        self.polygon_bnd_buffer = [None] * self.image_buffer_len
+        self.image_index = -1
         self.cv_bridge = CvBridge()
         self.display_thread = threading.Thread(target=self.__daemon_display_image)
         self.display_thread.start()
         # self.time_synchronizer = TimeSynchronizer((MsgFilterSubscriber(self.color_image_topic_name, RosImage),
         #                                           MsgFilterSubscriber(self.depth_image_topic_name, RosImage)), 10)
         # self.time_synchronizer.registerCallback(self.__callback_on_rgb_and_depth_images)
+        self.image_with_bbox_pub = rospy.Publisher('image_with_bbox', RosImage, queue_size=10)
         # while self.tcp_depth_camera_info_msg is None or self.tcp_depth_pre_computed_3d_rays is None or self.pan_tilt_depth_camera_info_msg is None or self.pan_tilt_depth_pre_computed_3d_rays is None:
         threading.Timer(1, self.nothing, [222]).start()
+        threading.Timer(1, self.read_rgb_images, ["/home/gao/Desktop/image_saved_kuka_without_hand"]).start()
         threading.Timer(1, self.detect_with_tf, []).start()
-        self.obj_detect_srv = rospy.Service('object_detection', TensorflowObjectDetection, self.__callback_on_obj_detect_service)
+        threading.Timer(1, self.pub_result_image, []).start()
 
-    def __callback_on_obj_detect_service(self, req):
-        rgb_image_msg = req.rgb_image
-        depth_image_msg = req.depth_image
-        rgb_cv_image = self.cv_bridge.imgmsg_to_cv2(rgb_image_msg, "rgb8")
-        depth_cv_image = self.cv_bridge.imgmsg_to_cv2(depth_image_msg, "mono16")
-        # self.display_image_on_window(rgb_cv_image, "color image")
-        # self.display_image_on_window(depth_cv_image, "depth image")
-        self.mutex_image_index.acquire(True)
-        self.image_index += 1
-        local_image_index = self.image_index
-        self.mutex_image_index.release()
-        buffer_index = local_image_index % self.image_buffer_len
-        self.color_image_buffer[buffer_index] = rgb_cv_image
-        self.depth_image_buffer[buffer_index] = depth_cv_image
-        is_finished = False
-        while not is_finished:
-            sys_time.sleep(0.001)
-            self.mutex_image_index.acquire(True)
-            self.mutex_processed_image_index.acquire()
-            if self.processed_image_index >= local_image_index:
-                is_finished = True
-            self.mutex_processed_image_index.release()
-            self.mutex_image_index.release()
-        res = TensorflowObjectDetectionResponse(self.polygon_bnd_buffer[buffer_index]["ploygon"],
-                                                self.polygon_bnd_buffer[buffer_index]["class_name"],
-                                                self.polygon_bnd_buffer[buffer_index]["score"])
-        return res
+    def load_image_into_numpy_array(self, image):
+        (im_width, im_height) = image.size
+        return np.array(image.getdata()).reshape(
+            (im_height, im_width, 3)).astype(np.uint8)
 
-    def __callback_on_rgb_and_depth_images_topic(self, rgb_ros_image_msg, depth_ros_image_msg):
+    def pub_result_image(self, ):
+        while True:
+            while self.result_bbox_image_queue.empty() is False:
+                image_np = self.result_bbox_image_queue.get()
+                self.image_with_bbox_pub.publish(self.cv_bridge.cv2_to_imgmsg(image_np, "rgb8"))
+            sys_time.sleep(.01)
+        pass
+
+    def read_rgb_images(self, rgb_image_dir):
+        import glob
+        rgb_image_path_list = sorted(glob.glob(rgb_image_dir +"/*.*g"))
+        while True:
+            for rgb_image_path in rgb_image_path_list:
+                python_img = Image.open(rgb_image_path)
+                opencv_img = self.load_image_into_numpy_array(python_img)
+                self.display_image_on_window(opencv_img, "color image")
+                buffer_index = (self.image_index + 1) % self.image_buffer_len
+                self.color_image_buffer[buffer_index] = opencv_img
+                self.image_index += 1
+                rospy.sleep(0.1)
+
+    def __callback_on_rgb_and_depth_images(self, rgb_ros_image_msg, depth_ros_image_msg):
         # assert rgb_ros_image_msg.header.stamp == depth_ros_image_msg.header.stamp
         # rgb_cv_image = self.cv_bridge.imgmsg_to_cv2(rgb_ros_image_msg, "bgr8")
         rgb_cv_image = self.cv_bridge.imgmsg_to_cv2(rgb_ros_image_msg, "rgb8")
+        bgr_cv_image = cv2.cvtColor(rgb_cv_image, cv2.COLOR_RGB2BGR)
         depth_cv_image = self.cv_bridge.imgmsg_to_cv2(depth_ros_image_msg, "mono16")
-        self.display_image_on_window(rgb_cv_image, "color image")
+        # self.display_image_on_window(rgb_cv_image, "color image")
+        self.display_image_on_window(bgr_cv_image, "color image")
         self.display_image_on_window(depth_cv_image, "depth image")
-        self.mutex_image_index.acquire()
         buffer_index = (self.image_index + 1) % self.image_buffer_len
-        self.mutex_image_index.release()
         self.color_image_buffer[buffer_index] = rgb_cv_image
+        # self.color_image_buffer[buffer_index] = bgr_cv_image
         self.depth_image_buffer[buffer_index] = depth_cv_image
-        self.mutex_image_index.acquire(True)
         self.image_index += 1
-        self.mutex_image_index.release()
 
     def display_image_on_window(self, image, window_name, resize_x_axis=1., resize_y_axis=1.):
         self.interThreadQueue.put((window_name, cv2.resize(image, None, fx=resize_x_axis, fy=resize_y_axis)))
+
+    def send_rgb_image_to_detector(self, image):
+        self.rgb_cv_image_queue.put(image)
 
     def __daemon_display_image(self):
         while True:
@@ -149,11 +147,8 @@ class ObjectDetector:
         with detection_graph.as_default():
             with tf.Session(graph=detection_graph) as sess:
                 while True:
-                    self.mutex_image_index.acquire()
-                    local_image_index = self.image_index
-                    self.mutex_image_index.release()
-                    for i_image in range(self.processed_image_index+1, local_image_index+1):
-                        buffer_index = i_image % self.image_buffer_len
+                    if self.image_index >= 0:
+                        buffer_index = self.image_index % self.image_buffer_len
                         # image_np = self.color_image_buffer[buffer_index]
                         image_np = np.copy(self.color_image_buffer[buffer_index])
                         # Expand dimensions since the model expects images to have shape: [1, None, None, 3]
@@ -179,43 +174,17 @@ class ObjectDetector:
                             category_index,
                             use_normalized_coordinates=True,
                             line_thickness=2)
-                        boxes_np = np.squeeze(boxes)
-                        scores_np = np.squeeze(scores)
-                        classes_np = np.squeeze(classes).astype(np.int32)
-
-                        def make_polygon(box):
-                            ymin, xmin, ymax, xmax = box
-                            points = [Point32(xmin, ymin, 0), Point32(xmin, ymax, 0),
-                                      Point32(xmax, ymax, 0), Point32(xmax, ymin, 0)]
-                            polygon = Polygon(points)
-                            return polygon
-
-                        bnd_polygon_list = []
-                        bnd_score_list = []
-                        bnd_class_name_list = []
-                        for i in range(boxes_np.shape[0]):
-                            if scores_np[i] > 0.5:
-                                box = tuple(boxes_np[i].tolist())
-                                class_name = category_index[classes_np[i]]['name'].encode('ascii', 'replace')
-                                bnd_polygon_list.append(make_polygon(box))
-                                bnd_score_list.append(scores_np[i])
-                                bnd_class_name_list.append(class_name)
-                        self.polygon_bnd_buffer[buffer_index] = {"ploygon": bnd_polygon_list,
-                                                                 "score": bnd_score_list,
-                                                                 "class_name": bnd_class_name_list}
-                        self.mutex_processed_image_index.acquire(True)
-                        self.processed_image_index = i_image
-                        self.mutex_processed_image_index.release()
-
                         # plt.figure(figsize=IMAGE_SIZE)
-                        if img_to_show is None:
-                            img_to_show = plt.imshow(image_np)
-                        else:
-                            img_to_show.set_data(image_np)
-                        plt.pause(.001)
-                        plt.draw()
+                        # self.display_image_on_window(image_np, "result")
+                        self.result_bbox_image_queue.put(image_np)
+                        # if img_to_show is None:
+                        #     img_to_show = plt.imshow(image_np)
+                        # else:
+                        #     img_to_show.set_data(image_np)
+                        # plt.pause(.001)
+                        # plt.draw()
                     # sys_time.sleep(.01)
-                    sys_time.sleep(.001)
+                    sys_time.sleep(.01)
                     # plt.figure()
                     # plt.imshow(image_np)
                     # plt.show()

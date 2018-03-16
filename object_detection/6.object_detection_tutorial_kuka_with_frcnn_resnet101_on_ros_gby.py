@@ -130,7 +130,8 @@ class ObjectDetector:
                 while True:
                     if self.image_index >= 0:
                         buffer_index = self.image_index % self.image_buffer_len
-                        image_np = self.color_image_buffer[buffer_index]
+                        # image_np = self.color_image_buffer[buffer_index]
+                        image_np = np.copy(self.color_image_buffer[buffer_index])
                         # Expand dimensions since the model expects images to have shape: [1, None, None, 3]
                         image_np_expanded = np.expand_dims(image_np, axis=0)
                         image_tensor = detection_graph.get_tensor_by_name('image_tensor:0')
